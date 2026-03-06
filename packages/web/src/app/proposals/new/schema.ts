@@ -96,6 +96,7 @@ export const isValidCalldataValue = (
 
     if (isArray) {
       if (!Array.isArray(value)) return false;
+      if (baseType === "tuple") return true;
       if (value.length === 0) return false;
       return value.every((item) => isValidSingleValue(item, baseType));
     }
@@ -147,6 +148,9 @@ const isValidSingleValue = (value: string, type: string): boolean => {
       if (size && value.length !== parseInt(size) * 2 + 2) return false;
       return /^0x[0-9a-fA-F]*$/.test(value);
     }
+
+    case type === "tuple":
+      return value.trim().length > 0;
 
     default:
       return false;
