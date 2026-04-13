@@ -39,21 +39,30 @@ export const Connected = ({ address, onMenuToggle }: ConnectedProps) => {
   const { data: votingPower, isLoading: isVotingPowerLoading } =
     useCurrentVotingPower(address);
 
+  // For IgraVotingPower, use the underlying igraToken for ERC20 queries
+  const isIgraVotingPower =
+    daoConfig?.contracts?.governorToken?.standard?.toUpperCase() === "IGRAVOTINGPOWER";
+  const erc20TokenAddress = (
+    isIgraVotingPower && daoConfig?.contracts?.igraToken
+      ? daoConfig.contracts.igraToken
+      : daoConfig?.contracts?.governorToken?.address
+  ) as `0x${string}`;
+
   const { data: totalSupply, isLoading: isTotalSupplyLoading } =
     useReadContract({
-      address: daoConfig?.contracts?.governorToken?.address as `0x${string}`,
+      address: erc20TokenAddress,
       abi: tokenAbi,
       functionName: "totalSupply",
       chainId: daoConfig?.chain?.id,
       query: {
         enabled:
-          Boolean(daoConfig?.contracts?.governorToken?.address) &&
+          Boolean(erc20TokenAddress) &&
           Boolean(daoConfig?.chain?.id),
       },
     });
 
   const { data: tokenBalance, isLoading: isBalanceLoading } = useReadContract({
-    address: daoConfig?.contracts?.governorToken?.address as `0x${string}`,
+    address: erc20TokenAddress,
     abi: tokenAbi,
     functionName: "balanceOf",
     args: [address],
@@ -61,7 +70,7 @@ export const Connected = ({ address, onMenuToggle }: ConnectedProps) => {
     query: {
       enabled:
         Boolean(address) &&
-        Boolean(daoConfig?.contracts?.governorToken?.address) &&
+        Boolean(erc20TokenAddress) &&
         Boolean(daoConfig?.chain?.id),
     },
   });
