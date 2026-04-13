@@ -33,10 +33,18 @@ export function useGovernanceToken(
   const { enabled = true } = options;
   const daoConfig = useDaoConfig();
   const standard = daoConfig?.contracts?.governorToken?.standard;
-  const tokenAddress = daoConfig?.contracts?.governorToken?.address as Address;
+  // For IgraVotingPower, the adapter contract doesn't implement ERC20 metadata.
+  // Use the underlying igraToken address instead.
+  // Note: processStandardProperties() uppercases all "standard" values at runtime.
+  const isIgraVotingPower = standard?.toUpperCase() === "IGRAVOTINGPOWER";
+  const tokenAddress = (
+    isIgraVotingPower && daoConfig?.contracts?.igraToken
+      ? daoConfig.contracts.igraToken
+      : daoConfig?.contracts?.governorToken?.address
+  ) as Address;
   const { data, isLoading, error } = useReadContracts({
     contracts:
-      standard === "ERC20"
+      standard === "ERC20" || isIgraVotingPower
         ? [
             {
               address: tokenAddress,
@@ -83,7 +91,7 @@ export function useGovernanceToken(
         symbol: (data[0].result as string) ?? "TOKEN",
         name: (data[1].result as string) ?? "Governance Token",
         decimals:
-          standard === "ERC20"
+          standard === "ERC20" || isIgraVotingPower
             ? data?.[2]?.result
               ? Number(data[2].result)
               : 18
