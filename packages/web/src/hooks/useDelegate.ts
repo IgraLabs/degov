@@ -12,12 +12,23 @@ export const useDelegate = () => {
   const daoConfig = useDaoConfig();
   const { writeContractAsync, isPending } = useWriteContract();
   const { validateBeforeExecution } = useContractGuard();
+
+  // For IgraVotingPower, delegate on the underlying igraToken (ERC20) since the adapter doesn't support it
+  const isIgraVotingPower =
+    daoConfig?.contracts?.governorToken?.standard?.toUpperCase() ===
+    "IGRAVOTINGPOWER";
+  const delegateTokenAddress = (
+    isIgraVotingPower && daoConfig?.contracts?.igraToken
+      ? daoConfig.contracts.igraToken
+      : daoConfig?.contracts?.governorToken?.address
+  ) as Address;
+
   const delegate = useCallback(
     async (delegatee: Address) => {
       const isValid = validateBeforeExecution();
       if (!isValid) return;
       const hash = await writeContractAsync({
-        address: daoConfig?.contracts?.governorToken?.address as `0x${string}`,
+        address: delegateTokenAddress,
         abi: tokenAbi,
         functionName: "delegate",
         args: [delegatee],
@@ -25,11 +36,7 @@ export const useDelegate = () => {
 
       return hash;
     },
-    [
-      writeContractAsync,
-      daoConfig?.contracts?.governorToken?.address,
-      validateBeforeExecution,
-    ]
+    [writeContractAsync, delegateTokenAddress, validateBeforeExecution]
   );
 
   return {
