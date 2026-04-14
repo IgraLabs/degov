@@ -41,21 +41,28 @@ export function DelegateAction({
   const { data: governanceToken, isLoading: isLoadingGovernanceToken } =
     useGovernanceToken();
 
+  // For IgraVotingPower, use the underlying igraToken for balanceOf since the adapter doesn't support it
+  const isIgraVotingPower =
+    daoConfig?.contracts?.governorToken?.standard?.toUpperCase() ===
+    "IGRAVOTINGPOWER";
+  const balanceTokenAddress = (
+    isIgraVotingPower && daoConfig?.contracts?.igraToken
+      ? daoConfig.contracts.igraToken
+      : daoConfig?.contracts?.governorToken?.address
+  ) as `0x${string}`;
+
   const {
     data: tokenBalance,
     isLoading: isLoadingTokenBalance,
     refetch: refetchTokenBalance,
   } = useReadContract({
-    address: daoConfig?.contracts?.governorToken?.address as `0x${string}`,
+    address: balanceTokenAddress,
     abi: tokenAbi,
     functionName: "balanceOf",
     args: [account as `0x${string}`],
     chainId: daoConfig?.chain?.id,
     query: {
-      enabled:
-        !!account &&
-        !!daoConfig?.contracts?.governorToken?.address &&
-        !!daoConfig?.chain?.id,
+      enabled: !!account && !!balanceTokenAddress && !!daoConfig?.chain?.id,
     },
   });
 
