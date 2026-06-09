@@ -107,9 +107,9 @@ export const Aside = () => {
                       }
                       alt="logo"
                       width={128}
-                      height={26}
+                      height={45}
                       priority
-                      className="h-[26px] w-[128px]"
+                      className="h-[45px] w-[128px] object-contain"
                     />
                   ) : (
                     <LogoIcon
