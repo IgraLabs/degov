@@ -146,6 +146,7 @@ export class GovernorHandler {
     if (qmr.clockMode == ClockMode.BlockNumber) {
       const cpvt = calculateProposalVoteTimestamp({
         clockMode: ClockMode.BlockNumber,
+        proposalVoteStart: Number(event.voteStart),
         proposalVoteEnd: Number(event.voteEnd),
         proposalCreatedBlock: eventLog.block.height,
         proposalStartTimestamp: eventLog.block.timestamp,
@@ -415,30 +416,35 @@ interface ProposalVoteTimestamp {
   voteEnd: number;
 }
 
-function calculateProposalVoteTimestamp(options: {
+export function calculateProposalVoteTimestamp(options: {
   clockMode: ClockMode;
-  proposalVoteEnd: number; // seconds (if clockMode is Timestamp)
+  proposalVoteStart: number; // block number (if BlockNumber) or seconds (if Timestamp)
+  proposalVoteEnd: number; // block number (if BlockNumber) or seconds (if Timestamp)
   proposalCreatedBlock: number; // block number
   proposalStartTimestamp: number; // milliseconds
   blockInterval: number;
 }): ProposalVoteTimestamp {
-  let proposalEndTimestamp;
   switch (options.clockMode) {
-    case ClockMode.BlockNumber:
-      const blocksSinceCreation =
+    case ClockMode.BlockNumber: {
+      const delayBlocks =
+        options.proposalVoteStart - options.proposalCreatedBlock;
+      const endBlocks =
         options.proposalVoteEnd - options.proposalCreatedBlock;
-      const additionalSeconds = blocksSinceCreation * options.blockInterval;
-      const voteEndSeconds =
-        options.proposalStartTimestamp + additionalSeconds * 1000;
-      proposalEndTimestamp = new Date(Math.round(voteEndSeconds));
-      break;
+      return {
+        voteStart: Math.round(
+          options.proposalStartTimestamp +
+            delayBlocks * options.blockInterval * 1000
+        ),
+        voteEnd: Math.round(
+          options.proposalStartTimestamp +
+            endBlocks * options.blockInterval * 1000
+        ),
+      };
+    }
     case ClockMode.Timestamp:
-      proposalEndTimestamp = new Date(+options.proposalVoteEnd * 1000);
-      break;
+      return {
+        voteStart: options.proposalVoteStart * 1000,
+        voteEnd: options.proposalVoteEnd * 1000,
+      };
   }
-
-  return {
-    voteStart: options.proposalStartTimestamp,
-    voteEnd: +proposalEndTimestamp,
-  };
 }
