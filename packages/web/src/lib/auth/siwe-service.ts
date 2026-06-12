@@ -3,6 +3,7 @@ import { createSiweMessage } from "viem/siwe";
 
 import { degovGraphqlApi } from "@/utils/remote-api";
 
+import { authDebug } from "./debug";
 import { tokenManager } from "./token-manager";
 
 export interface SiweAuthConfig {
@@ -89,7 +90,10 @@ export class SiweService {
       let remoteToken: string | undefined;
       const errors: string[] = [];
 
+      authDebug.log(`verifySignature:loginLocal:start address=${address}`);
+      const t0 = Date.now();
       const localResult = await this.loginLocal(message, signature);
+      authDebug.log(`verifySignature:loginLocal:done ${Date.now() - t0}ms success=${localResult.success} error=${localResult.error ?? "none"}`);
       if (localResult.success) {
         localToken = localResult.token;
         tokenManager.setToken(localToken!, address);
@@ -98,7 +102,10 @@ export class SiweService {
       }
 
       if (nonceSource === "remote") {
+        authDebug.log("verifySignature:loginRemote:start");
+        const t1 = Date.now();
         const remoteResult = await this.loginRemote(message, signature);
+        authDebug.log(`verifySignature:loginRemote:done ${Date.now() - t1}ms success=${remoteResult.success} error=${remoteResult.error ?? "none"}`);
         if (remoteResult.success) {
           remoteToken = remoteResult.token;
           tokenManager.setRemoteToken(remoteToken!, address);
@@ -108,6 +115,7 @@ export class SiweService {
       }
 
       if (localToken || remoteToken) {
+        authDebug.log(`verifySignature:success local=${!!localToken} remote=${!!remoteToken}`);
         return {
           success: true,
           token: localToken,
@@ -116,6 +124,7 @@ export class SiweService {
         };
       }
 
+      authDebug.log(`verifySignature:failed ${errors.join("; ")}`);
       return {
         success: false,
         error: errors.join("; ") || "Authentication failed",
@@ -123,6 +132,7 @@ export class SiweService {
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
+      authDebug.log(`verifySignature:exception ${errorMessage}`);
       return { success: false, error: errorMessage };
     }
   }

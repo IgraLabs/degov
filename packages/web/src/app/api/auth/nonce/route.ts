@@ -11,16 +11,17 @@ import { nonceCache } from "../../common/nonce-cache";
 type NonceSource = "generated" | "remote";
 
 export async function POST() {
+  const t0 = Date.now();
+  const log = (step: string) => console.log(`[auth:nonce] ${step} +${Date.now() - t0}ms`);
+
   let nonce = CryptoJS.lib.WordArray.random(32).toString(CryptoJS.enc.Hex);
-  // Initialize the source as 'generated'. This will be the default unless
-  // we successfully fetch from the remote API.
   let source: NonceSource = "generated";
 
   const graphqlEndpoint = degovGraphqlApi();
+  log(`start graphql=${graphqlEndpoint ?? "none"}`);
 
   if (graphqlEndpoint) {
     try {
-      // Define the GraphQL query.
       const graphqlQuery = {
         query: `
           query QueryNonce {
@@ -29,7 +30,6 @@ export async function POST() {
         `,
       };
 
-      // Send a POST request to the GraphQL API.
       const response = await fetch(graphqlEndpoint, {
         method: "POST",
         headers: {
@@ -37,9 +37,9 @@ export async function POST() {
         },
         body: JSON.stringify(graphqlQuery),
       });
+      log(`graphql-response status=${response.status}`);
 
       if (!response.ok) {
-        // If the HTTP status code is not in the 200-299 range, throw an error.
         throw new Error(
           `GraphQL request failed with status ${response.status}`
         );
@@ -49,24 +49,17 @@ export async function POST() {
 
       if (body.data && body.data.nonce) {
         nonce = body.data.nonce;
-        source = "remote"; // Update the source since we got it from the remote API.
+        source = "remote";
       } else {
-        // If the response format is not as expected, log a warning.
-        // The code will proceed with the generated nonce.
-        console.warn(
-          "Nonce not found in GraphQL response, using fallback.",
-          body
-        );
+        log(`graphql-nonce:missing body=${JSON.stringify(body).slice(0, 200)}`);
       }
     } catch (error) {
-      // If the fetch or subsequent processing fails, log the error.
-      // The function will continue to use the locally generated fallback nonce.
-      console.error("Failed to fetch nonce from GraphQL:", error);
+      log(`graphql-nonce:error ${error}`);
     }
   }
 
   nonceCache.set(nonce);
-  console.log(`Using nonce from source: ${source} - ${nonce} and is valid: ${nonceCache.isValid(nonce)}`);
+  log(`done source=${source} nonce=${nonce.slice(0, 8)}...`);
 
   return NextResponse.json(Resp.ok({ nonce, source }));
 }
