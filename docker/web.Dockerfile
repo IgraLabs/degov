@@ -9,7 +9,7 @@ COPY . /code
 ENV DEGOV_CONFIG_PATH=/app/degov.yml
 ENV CI=true
 
-RUN corepack enable pnpm \
+RUN npm install -g pnpm@10 \
   && mv /code/packages/web /app \
   && mv /code/degov.yml /app \
   && rm -rf /code \
