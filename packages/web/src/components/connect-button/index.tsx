@@ -1,6 +1,6 @@
 "use client";
 import { useConnectModal } from "@rainbow-me/rainbowkit";
-import { useAccount } from "wagmi";
+import { useAccount, useSwitchChain } from "wagmi";
 
 import { useDaoConfig } from "@/hooks/useDaoConfig";
 
@@ -17,6 +17,7 @@ export const ConnectButton = ({
   const dappConfig = useDaoConfig();
   const { chainId, address, isConnected, isConnecting, isReconnecting } =
     useAccount();
+  const { switchChain } = useSwitchChain();
 
   if (isConnecting || isReconnecting) {
     return null;
@@ -38,8 +39,16 @@ export const ConnectButton = ({
 
   if (Number(chainId) !== Number(dappConfig?.chain?.id)) {
     return (
-      <Button variant="destructive" className="cursor-auto rounded-[100px]">
-        Error Chain
+      <Button
+        variant="destructive"
+        className="rounded-[100px]"
+        onClick={() => {
+          if (dappConfig?.chain?.id) {
+            switchChain({ chainId: Number(dappConfig.chain.id) });
+          }
+        }}
+      >
+        Switch Network
       </Button>
     );
   }

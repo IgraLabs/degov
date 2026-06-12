@@ -53,7 +53,7 @@ export function createConfig({
     return cachedConfig;
   }
 
-  const chains = [mainnet as Chain, chain];
+  const chains = [chain, mainnet as Chain];
   const storage: Storage = createStorage({
     storage: cookieStorage,
   });
