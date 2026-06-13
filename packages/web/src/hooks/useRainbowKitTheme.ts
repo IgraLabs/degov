@@ -23,14 +23,14 @@ export function useRainbowKitTheme() {
   if (isDarkTheme) {
     return darkTheme({
       borderRadius: 'medium',
-      accentColor: 'hsl(var(--foreground))',
-      accentColorForeground: 'hsl(var(--card))',
+      accentColor: 'var(--foreground)',
+      accentColorForeground: 'var(--card)',
     });
   } else {
     return lightTheme({
       borderRadius: 'medium',
-      accentColor: 'hsl(var(--foreground))',
-      accentColorForeground: 'hsl(var(--card))',
+      accentColor: 'var(--foreground)',
+      accentColorForeground: 'var(--card)',
     });
   }
 }
