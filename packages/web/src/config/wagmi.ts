@@ -11,6 +11,7 @@ import { QueryClient } from "@tanstack/react-query";
 import { cookieStorage, createStorage, type Storage } from "wagmi";
 import { mainnet } from "wagmi/chains";
 
+import { kastleWallet } from "@/config/kastle-wallet";
 import { createWagmiQueryConfig } from "@/utils/query-config";
 
 import type { Chain } from "@rainbow-me/rainbowkit";
@@ -67,6 +68,7 @@ export function createConfig({
       {
         groupName: "More",
         wallets: [
+          kastleWallet,
           talismanWallet,
           subWallet,
           okxWallet,
