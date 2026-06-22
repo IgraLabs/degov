@@ -33,6 +33,11 @@ function createKastleConnector() {
   };
 }
 
+export function isKastleBrowser(): boolean {
+  if (typeof window === "undefined") return false;
+  return !!(window as any).kastle;
+}
+
 export const kastleWallet = (): Wallet => ({
   id: "kastle",
   name: "Kastle",

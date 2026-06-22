@@ -11,7 +11,7 @@ import { QueryClient } from "@tanstack/react-query";
 import { cookieStorage, createStorage, type Storage } from "wagmi";
 import { mainnet } from "wagmi/chains";
 
-import { kastleWallet } from "@/config/kastle-wallet";
+import { isKastleBrowser, kastleWallet } from "@/config/kastle-wallet";
 import { createWagmiQueryConfig } from "@/utils/query-config";
 
 import type { Chain } from "@rainbow-me/rainbowkit";
@@ -48,7 +48,7 @@ export function createConfig({
   appName: string;
   projectId: string;
 }) {
-  const cacheKey = `${projectId}-${chainFingerprint(chain)}`;
+  const cacheKey = `${projectId}-${chainFingerprint(chain)}-${isKastleBrowser() ? "kastle" : "default"}`;
   const cachedConfig = configCache.get(cacheKey);
   if (cachedConfig) {
     return cachedConfig;
@@ -59,25 +59,30 @@ export function createConfig({
     storage: cookieStorage,
   });
 
+  const kastleOnly = isKastleBrowser();
+  const walletGroups = kastleOnly
+    ? [{ groupName: "Kastle", wallets: [kastleWallet] }]
+    : [
+        ...wallets,
+        {
+          groupName: "More",
+          wallets: [
+            kastleWallet,
+            talismanWallet,
+            subWallet,
+            okxWallet,
+            imTokenWallet,
+            trustWallet,
+            safeWallet,
+          ],
+        },
+      ];
+
   const config = getDefaultConfig({
     appName,
     projectId,
     chains: chains as unknown as readonly [Chain, ...Chain[]],
-    wallets: [
-      ...wallets,
-      {
-        groupName: "More",
-        wallets: [
-          kastleWallet,
-          talismanWallet,
-          subWallet,
-          okxWallet,
-          imTokenWallet,
-          trustWallet,
-          safeWallet,
-        ],
-      },
-    ],
+    wallets: walletGroups,
     ssr: true,
     storage,
   });
