@@ -6,20 +6,11 @@ const nextConfig: NextConfig = {
     "/": ["./public/**/*"],
   },
   images: {
-    remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "**", // Broad allowlist keeps existing external avatars/assets working; tighten once domains are audited
-      },
-      {
-        protocol: "http",
-        hostname: "**",
-      },
-    ],
-    formats: ["image/webp", "image/avif"],
-    minimumCacheTTL: 60,
-    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
-    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    // Avatars and treasury logos come from arbitrary user/API-supplied hosts.
+    // Serving them through /_next/image made the server an open proxy that
+    // fetched and decoded attacker-controlled images (SSRF + sharp/libheif RCE),
+    // so images are passed through to the browser unmodified instead.
+    unoptimized: true,
   },
   reactStrictMode: false,
 
