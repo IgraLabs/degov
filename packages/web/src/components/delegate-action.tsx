@@ -15,6 +15,7 @@ import { abi as tokenAbi } from "@/config/abi/token";
 import { useDaoConfig } from "@/hooks/useDaoConfig";
 import { useDelegate } from "@/hooks/useDelegate";
 import { useGovernanceToken } from "@/hooks/useGovernanceToken";
+import { resolveErc20TokenAddress } from "@/utils/governance-token";
 import { formatBigIntForDisplay } from "@/utils/number";
 
 import { AddressWithAvatar } from "./address-with-avatar";
@@ -41,15 +42,7 @@ export function DelegateAction({
   const { data: governanceToken, isLoading: isLoadingGovernanceToken } =
     useGovernanceToken();
 
-  // For IgraVotingPower, use the underlying igraToken for balanceOf since the adapter doesn't support it
-  const isIgraVotingPower =
-    daoConfig?.contracts?.governorToken?.standard?.toUpperCase() ===
-    "IGRAVOTINGPOWER";
-  const balanceTokenAddress = (
-    isIgraVotingPower && daoConfig?.contracts?.igraToken
-      ? daoConfig.contracts.igraToken
-      : daoConfig?.contracts?.governorToken?.address
-  ) as `0x${string}`;
+  const balanceTokenAddress = resolveErc20TokenAddress(daoConfig?.contracts);
 
   const {
     data: tokenBalance,

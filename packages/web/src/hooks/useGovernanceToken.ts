@@ -1,6 +1,7 @@
 import { useReadContracts } from "wagmi";
 
 import { abi as tokenAbi } from "@/config/abi/token";
+import { resolveErc20TokenAddress } from "@/utils/governance-token";
 import { QUERY_CONFIGS } from "@/utils/query-config";
 
 import { useDaoConfig } from "./useDaoConfig";
@@ -33,15 +34,9 @@ export function useGovernanceToken(
   const { enabled = true } = options;
   const daoConfig = useDaoConfig();
   const standard = daoConfig?.contracts?.governorToken?.standard;
-  // For IgraVotingPower, the adapter contract doesn't implement ERC20 metadata.
-  // Use the underlying igraToken address instead.
-  // Note: processStandardProperties() uppercases all "standard" values at runtime.
+  // The IgraVotingPower adapter doesn't implement ERC20 metadata; read it from igraToken.
   const isIgraVotingPower = standard?.toUpperCase() === "IGRAVOTINGPOWER";
-  const tokenAddress = (
-    isIgraVotingPower && daoConfig?.contracts?.igraToken
-      ? daoConfig.contracts.igraToken
-      : daoConfig?.contracts?.governorToken?.address
-  ) as Address;
+  const tokenAddress = resolveErc20TokenAddress(daoConfig?.contracts) as Address;
   const { data, isLoading, error } = useReadContracts({
     contracts:
       standard === "ERC20" || isIgraVotingPower

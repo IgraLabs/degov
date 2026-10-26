@@ -17,6 +17,7 @@ import { useFormatGovernanceTokenAmount } from "@/hooks/useFormatGovernanceToken
 import { useGovernanceToken } from "@/hooks/useGovernanceToken";
 import { useCurrentVotingPower } from "@/hooks/useSmartGetVotes";
 import { formatShortAddress } from "@/utils";
+import { resolveErc20TokenAddress } from "@/utils/governance-token";
 
 import { AddressAvatar } from "../address-avatar";
 import { AddressResolver } from "../address-resolver";
@@ -39,14 +40,7 @@ export const Connected = ({ address, onMenuToggle }: ConnectedProps) => {
   const { data: votingPower, isLoading: isVotingPowerLoading } =
     useCurrentVotingPower(address);
 
-  // For IgraVotingPower, use the underlying igraToken for ERC20 queries
-  const isIgraVotingPower =
-    daoConfig?.contracts?.governorToken?.standard?.toUpperCase() === "IGRAVOTINGPOWER";
-  const erc20TokenAddress = (
-    isIgraVotingPower && daoConfig?.contracts?.igraToken
-      ? daoConfig.contracts.igraToken
-      : daoConfig?.contracts?.governorToken?.address
-  ) as `0x${string}`;
+  const erc20TokenAddress = resolveErc20TokenAddress(daoConfig?.contracts);
 
   const { data: totalSupply, isLoading: isTotalSupplyLoading } =
     useReadContract({

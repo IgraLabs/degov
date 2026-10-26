@@ -2,6 +2,7 @@ import { useCallback } from "react";
 import { useWriteContract } from "wagmi";
 
 import { abi as tokenAbi } from "@/config/abi/token";
+import { resolveErc20TokenAddress } from "@/utils/governance-token";
 
 import { useContractGuard } from "./useContractGuard";
 import { useDaoConfig } from "./useDaoConfig";
@@ -13,14 +14,8 @@ export const useDelegate = () => {
   const { writeContractAsync, isPending } = useWriteContract();
   const { validateBeforeExecution } = useContractGuard();
 
-  // For IgraVotingPower, delegate on the underlying igraToken (ERC20) since the adapter doesn't support it
-  const isIgraVotingPower =
-    daoConfig?.contracts?.governorToken?.standard?.toUpperCase() ===
-    "IGRAVOTINGPOWER";
-  const delegateTokenAddress = (
-    isIgraVotingPower && daoConfig?.contracts?.igraToken
-      ? daoConfig.contracts.igraToken
-      : daoConfig?.contracts?.governorToken?.address
+  const delegateTokenAddress = resolveErc20TokenAddress(
+    daoConfig?.contracts
   ) as Address;
 
   const delegate = useCallback(

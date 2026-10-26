@@ -19,6 +19,7 @@ import { useFormatGovernanceTokenAmount } from "@/hooks/useFormatGovernanceToken
 import { useGovernanceToken } from "@/hooks/useGovernanceToken";
 import { useProfileQuery } from "@/hooks/useProfileQuery";
 import { delegateService } from "@/services/graphql";
+import { resolveErc20TokenAddress } from "@/utils/governance-token";
 
 import { JoinDelegate } from "./join-delegate";
 import { ReceivedDelegations } from "./received-delegations";
@@ -89,15 +90,7 @@ export const Profile = ({ address, isDelegate }: ProfileProps) => {
     });
 
   // get governance token balance
-  // For IgraVotingPower, use the underlying igraToken for balanceOf since the adapter doesn't support it
-  const isIgraVotingPower =
-    daoConfig?.contracts?.governorToken?.standard?.toUpperCase() ===
-    "IGRAVOTINGPOWER";
-  const balanceTokenAddress = (
-    isIgraVotingPower && daoConfig?.contracts?.igraToken
-      ? daoConfig.contracts.igraToken
-      : daoConfig?.contracts?.governorToken?.address
-  ) as `0x${string}`;
+  const balanceTokenAddress = resolveErc20TokenAddress(daoConfig?.contracts);
   const { data: tokenBalance, isLoading: isLoadingTokenBalance } =
     useReadContract({
       address: balanceTokenAddress,
