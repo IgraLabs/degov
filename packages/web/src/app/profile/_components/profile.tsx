@@ -19,6 +19,7 @@ import { useFormatGovernanceTokenAmount } from "@/hooks/useFormatGovernanceToken
 import { useGovernanceToken } from "@/hooks/useGovernanceToken";
 import { useProfileQuery } from "@/hooks/useProfileQuery";
 import { delegateService } from "@/services/graphql";
+import { resolveErc20TokenAddress } from "@/utils/governance-token";
 
 import { JoinDelegate } from "./join-delegate";
 import { ReceivedDelegations } from "./received-delegations";
@@ -30,8 +31,8 @@ const SystemInfo = dynamic(
   {
     loading: () => (
       <div className="h-[300px] w-[360px] bg-card rounded-[14px] animate-pulse" />
-    )
-  }
+    ),
+  },
 );
 
 const Faqs = dynamic(
@@ -39,8 +40,8 @@ const Faqs = dynamic(
   {
     loading: () => (
       <div className="h-[200px] bg-card rounded-[14px] animate-pulse" />
-    )
-  }
+    ),
+  },
 );
 
 interface ProfileProps {
@@ -74,9 +75,8 @@ export const Profile = ({ address, isDelegate }: ProfileProps) => {
     },
   });
 
-  const { data: profileData, isLoading: isProfileLoading } = useProfileQuery(
-    address
-  );
+  const { data: profileData, isLoading: isProfileLoading } =
+    useProfileQuery(address);
 
   const { data: delegateMappings, isLoading: isDelegateMappingsLoading } =
     useQuery({
@@ -84,24 +84,22 @@ export const Profile = ({ address, isDelegate }: ProfileProps) => {
       queryFn: () =>
         delegateService.getDelegateMappings(
           daoConfig?.indexer?.endpoint as string,
-          { where: { from_eq: address?.toLowerCase() } }
+          { where: { from_eq: address?.toLowerCase() } },
         ),
       enabled: !!address && !!daoConfig?.indexer?.endpoint,
     });
 
-  // get governance token
+  // get governance token balance
+  const balanceTokenAddress = resolveErc20TokenAddress(daoConfig?.contracts);
   const { data: tokenBalance, isLoading: isLoadingTokenBalance } =
     useReadContract({
-      address: daoConfig?.contracts?.governorToken?.address as `0x${string}`,
+      address: balanceTokenAddress,
       abi: tokenAbi,
       functionName: "balanceOf",
       args: [address as `0x${string}`],
       chainId: daoConfig?.chain?.id,
       query: {
-        enabled:
-          !!address &&
-          !!daoConfig?.contracts?.governorToken?.address &&
-          !!daoConfig?.chain?.id,
+        enabled: !!address && !!balanceTokenAddress && !!daoConfig?.chain?.id,
       },
     });
 
@@ -186,7 +184,7 @@ export const Profile = ({ address, isDelegate }: ProfileProps) => {
         router.push("/delegates");
       }
     },
-    [router]
+    [router],
   );
 
   const handleEditProfile = useCallback(() => {

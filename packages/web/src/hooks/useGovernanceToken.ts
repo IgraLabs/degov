@@ -1,6 +1,7 @@
 import { useReadContracts } from "wagmi";
 
 import { abi as tokenAbi } from "@/config/abi/token";
+import { resolveErc20TokenAddress } from "@/utils/governance-token";
 import { QUERY_CONFIGS } from "@/utils/query-config";
 
 import { useDaoConfig } from "./useDaoConfig";
@@ -33,10 +34,12 @@ export function useGovernanceToken(
   const { enabled = true } = options;
   const daoConfig = useDaoConfig();
   const standard = daoConfig?.contracts?.governorToken?.standard;
-  const tokenAddress = daoConfig?.contracts?.governorToken?.address as Address;
+  // The IgraVotingPower adapter doesn't implement ERC20 metadata; read it from igraToken.
+  const isIgraVotingPower = standard?.toUpperCase() === "IGRAVOTINGPOWER";
+  const tokenAddress = resolveErc20TokenAddress(daoConfig?.contracts) as Address;
   const { data, isLoading, error } = useReadContracts({
     contracts:
-      standard === "ERC20"
+      standard === "ERC20" || isIgraVotingPower
         ? [
             {
               address: tokenAddress,
@@ -83,7 +86,7 @@ export function useGovernanceToken(
         symbol: (data[0].result as string) ?? "TOKEN",
         name: (data[1].result as string) ?? "Governance Token",
         decimals:
-          standard === "ERC20"
+          standard === "ERC20" || isIgraVotingPower
             ? data?.[2]?.result
               ? Number(data[2].result)
               : 18

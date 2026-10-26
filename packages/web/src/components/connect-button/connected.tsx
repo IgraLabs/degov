@@ -17,6 +17,7 @@ import { useFormatGovernanceTokenAmount } from "@/hooks/useFormatGovernanceToken
 import { useGovernanceToken } from "@/hooks/useGovernanceToken";
 import { useCurrentVotingPower } from "@/hooks/useSmartGetVotes";
 import { formatShortAddress } from "@/utils";
+import { resolveErc20TokenAddress } from "@/utils/governance-token";
 
 import { AddressAvatar } from "../address-avatar";
 import { AddressResolver } from "../address-resolver";
@@ -39,21 +40,23 @@ export const Connected = ({ address, onMenuToggle }: ConnectedProps) => {
   const { data: votingPower, isLoading: isVotingPowerLoading } =
     useCurrentVotingPower(address);
 
+  const erc20TokenAddress = resolveErc20TokenAddress(daoConfig?.contracts);
+
   const { data: totalSupply, isLoading: isTotalSupplyLoading } =
     useReadContract({
-      address: daoConfig?.contracts?.governorToken?.address as `0x${string}`,
+      address: erc20TokenAddress,
       abi: tokenAbi,
       functionName: "totalSupply",
       chainId: daoConfig?.chain?.id,
       query: {
         enabled:
-          Boolean(daoConfig?.contracts?.governorToken?.address) &&
+          Boolean(erc20TokenAddress) &&
           Boolean(daoConfig?.chain?.id),
       },
     });
 
   const { data: tokenBalance, isLoading: isBalanceLoading } = useReadContract({
-    address: daoConfig?.contracts?.governorToken?.address as `0x${string}`,
+    address: erc20TokenAddress,
     abi: tokenAbi,
     functionName: "balanceOf",
     args: [address],
@@ -61,7 +64,7 @@ export const Connected = ({ address, onMenuToggle }: ConnectedProps) => {
     query: {
       enabled:
         Boolean(address) &&
-        Boolean(daoConfig?.contracts?.governorToken?.address) &&
+        Boolean(erc20TokenAddress) &&
         Boolean(daoConfig?.chain?.id),
     },
   });

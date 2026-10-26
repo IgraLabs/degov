@@ -15,6 +15,7 @@ import { abi as tokenAbi } from "@/config/abi/token";
 import { useDaoConfig } from "@/hooks/useDaoConfig";
 import { useDelegate } from "@/hooks/useDelegate";
 import { useGovernanceToken } from "@/hooks/useGovernanceToken";
+import { resolveErc20TokenAddress } from "@/utils/governance-token";
 import { formatBigIntForDisplay } from "@/utils/number";
 
 import { AddressWithAvatar } from "./address-with-avatar";
@@ -41,21 +42,20 @@ export function DelegateAction({
   const { data: governanceToken, isLoading: isLoadingGovernanceToken } =
     useGovernanceToken();
 
+  const balanceTokenAddress = resolveErc20TokenAddress(daoConfig?.contracts);
+
   const {
     data: tokenBalance,
     isLoading: isLoadingTokenBalance,
     refetch: refetchTokenBalance,
   } = useReadContract({
-    address: daoConfig?.contracts?.governorToken?.address as `0x${string}`,
+    address: balanceTokenAddress,
     abi: tokenAbi,
     functionName: "balanceOf",
     args: [account as `0x${string}`],
     chainId: daoConfig?.chain?.id,
     query: {
-      enabled:
-        !!account &&
-        !!daoConfig?.contracts?.governorToken?.address &&
-        !!daoConfig?.chain?.id,
+      enabled: !!account && !!balanceTokenAddress && !!daoConfig?.chain?.id,
     },
   });
 

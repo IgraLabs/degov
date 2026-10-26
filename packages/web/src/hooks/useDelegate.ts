@@ -2,6 +2,7 @@ import { useCallback } from "react";
 import { useWriteContract } from "wagmi";
 
 import { abi as tokenAbi } from "@/config/abi/token";
+import { resolveErc20TokenAddress } from "@/utils/governance-token";
 
 import { useContractGuard } from "./useContractGuard";
 import { useDaoConfig } from "./useDaoConfig";
@@ -12,12 +13,17 @@ export const useDelegate = () => {
   const daoConfig = useDaoConfig();
   const { writeContractAsync, isPending } = useWriteContract();
   const { validateBeforeExecution } = useContractGuard();
+
+  const delegateTokenAddress = resolveErc20TokenAddress(
+    daoConfig?.contracts
+  ) as Address;
+
   const delegate = useCallback(
     async (delegatee: Address) => {
       const isValid = validateBeforeExecution();
       if (!isValid) return;
       const hash = await writeContractAsync({
-        address: daoConfig?.contracts?.governorToken?.address as `0x${string}`,
+        address: delegateTokenAddress,
         abi: tokenAbi,
         functionName: "delegate",
         args: [delegatee],
@@ -25,11 +31,7 @@ export const useDelegate = () => {
 
       return hash;
     },
-    [
-      writeContractAsync,
-      daoConfig?.contracts?.governorToken?.address,
-      validateBeforeExecution,
-    ]
+    [writeContractAsync, delegateTokenAddress, validateBeforeExecution]
   );
 
   return {
