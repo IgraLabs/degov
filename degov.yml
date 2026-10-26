@@ -3,7 +3,7 @@ code: igra-governance
 logo: /igra-logo-avatar.png
 siteUrl: https://governance.igralabs.com
 offChainDiscussionUrl: https://discord.gg/igralabs
-editLink: https://github.com/IgraLabs/degov/blob/igra/fix-docker-file/degov.yml
+editLink: https://github.com/IgraLabs/degov/blob/igralabs/degov.yml
 description: |
   Governance for Igra Network, an EVM-compatible programmability layer on top of Kaspa BlockDAG.
 # The following fields in the links are optional and will be used to display basic information about the DAO

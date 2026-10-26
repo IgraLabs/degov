@@ -19,6 +19,7 @@ import { useFormatGovernanceTokenAmount } from "@/hooks/useFormatGovernanceToken
 import { useGovernanceToken } from "@/hooks/useGovernanceToken";
 import { useProfileQuery } from "@/hooks/useProfileQuery";
 import { delegateService } from "@/services/graphql";
+import { getDelegationStatus } from "@/utils/delegation";
 import { resolveErc20TokenAddress } from "@/utils/governance-token";
 
 import { JoinDelegate } from "./join-delegate";
@@ -89,6 +90,21 @@ export const Profile = ({ address, isDelegate }: ProfileProps) => {
       enabled: !!address && !!daoConfig?.indexer?.endpoint,
     });
 
+  // Staking power (IgraVotingPower) has no DelegateChanged mapping; the indexer
+  // only records it as a self row in `delegates`.
+  const { data: selfDelegates, isLoading: isSelfDelegatesLoading } = useQuery({
+    queryKey: ["selfDelegates", address, daoConfig?.indexer?.endpoint],
+    queryFn: () =>
+      delegateService.getAllDelegates(daoConfig?.indexer?.endpoint as string, {
+        limit: 1,
+        where: {
+          fromDelegate_eq: address?.toLowerCase(),
+          toDelegate_eq: address?.toLowerCase(),
+        },
+      }),
+    enabled: !!address && !!daoConfig?.indexer?.endpoint,
+  });
+
   // get governance token balance
   const balanceTokenAddress = resolveErc20TokenAddress(daoConfig?.contracts);
   const { data: tokenBalance, isLoading: isLoadingTokenBalance } =
@@ -104,38 +120,36 @@ export const Profile = ({ address, isDelegate }: ProfileProps) => {
     });
 
   const delegationStatus = useMemo(() => {
-    const balance = tokenBalance
-      ? formatTokenAmount(tokenBalance)?.formatted
-      : 0;
-    if (!delegateMappings || delegateMappings.length === 0) {
-      return {
-        type: "none",
-        displayText: "Haven't delegated yet",
-        buttonText: "Join as Delegate",
-      };
+    const status = getDelegationStatus(address, delegateMappings, selfDelegates);
+    switch (status.type) {
+      case "none":
+        return {
+          type: "none",
+          displayText: "Haven't delegated yet",
+          buttonText: "Join as Delegate",
+        };
+      case "self":
+        return {
+          type: "self",
+          displayText: "Self",
+          buttonText: "Change Delegate",
+          to: status.to,
+        };
+      case "other": {
+        const balance = tokenBalance
+          ? formatTokenAmount(tokenBalance)?.formatted
+          : 0;
+        return {
+          type: "other",
+          displayText: `${balance ?? "0.00"} ${governanceToken?.symbol} to`,
+          buttonText: "Change Delegate",
+          to: status.to,
+        };
+      }
     }
-
-    const latestDelegation = delegateMappings[0];
-
-    // Check if delegating to self
-    if (latestDelegation.to.toLowerCase() === address.toLowerCase()) {
-      return {
-        type: "self",
-        displayText: "Self",
-        buttonText: "Change Delegate",
-        to: latestDelegation.to,
-      };
-    }
-
-    // Delegating to someone else
-    return {
-      type: "other",
-      displayText: `${balance ?? "0.00"} ${governanceToken?.symbol} to`,
-      buttonText: "Change Delegate",
-      to: latestDelegation.to,
-    };
   }, [
     delegateMappings,
+    selfDelegates,
     address,
     tokenBalance,
     formatTokenAmount,
@@ -281,7 +295,9 @@ export const Profile = ({ address, isDelegate }: ProfileProps) => {
             } ${governanceToken?.symbol}`}
             isLoadingTokenBalance={isLoadingTokenBalance}
             delegationStatusText={delegationStatusText}
-            isDelegateMappingsLoading={isDelegateMappingsLoading}
+            isDelegateMappingsLoading={
+              isDelegateMappingsLoading || isSelfDelegatesLoading
+            }
           />
           <ReceivedDelegations address={address} />
         </div>
