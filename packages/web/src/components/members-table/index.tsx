@@ -81,7 +81,7 @@ export function MembersTable({
       {
         title: "Name",
         key: "name",
-        width: "236.6px",
+        width: "26%",
         className: "text-left",
         render: (record) => (
           <AddressWithAvatar address={record?.id as `0x${string}`} skipFetch />
@@ -100,7 +100,7 @@ export function MembersTable({
           />
         ),
         key: "votingPower",
-        width: "215.26px",
+        width: "20%",
         className: "text-left",
         render: (record) => {
           if (isProfilePullLoading || isProposalMetricsLoading) {
@@ -141,7 +141,7 @@ export function MembersTable({
           />
         ),
         key: "lastVoted",
-        width: "215.26px",
+        width: "20%",
         className: "text-left",
         render: (record) => {
           if (!record?.lastVoteTimestamp) {
@@ -172,7 +172,7 @@ export function MembersTable({
           />
         ),
         key: "delegators",
-        width: "108.6px",
+        width: "12%",
         className: "text-left",
         render: (record) => (
           <span className="text-[14px] block py-[10px]">
@@ -183,7 +183,7 @@ export function MembersTable({
       {
         title: "Action",
         key: "action",
-        width: "215.26px",
+        width: "22%",
         className: "text-right",
         render: (record) => (
           <Button

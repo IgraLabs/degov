@@ -8,7 +8,13 @@ import {
   subWallet,
 } from "@rainbow-me/rainbowkit/wallets";
 import { QueryClient } from "@tanstack/react-query";
-import { cookieStorage, createStorage, type Storage } from "wagmi";
+import {
+  cookieStorage,
+  createStorage,
+  fallback,
+  http,
+  type Storage,
+} from "wagmi";
 import { mainnet } from "wagmi/chains";
 
 import { isKastleBrowser, kastleWallet } from "@/config/kastle-wallet";
@@ -17,6 +23,10 @@ import { createWagmiQueryConfig } from "@/utils/query-config";
 import type { Chain } from "@rainbow-me/rainbowkit";
 
 const { wallets } = getDefaultWallets();
+
+// Mainnet is only used for ENS lookups. viem's default mainnet RPC
+// (eth.merkle.io) rejects browser CORS requests, so set ones that allow it.
+const MAINNET_RPCS = ["https://eth.drpc.org", "https://1rpc.io/eth"];
 
 export function createQueryClient() {
   return new QueryClient(createWagmiQueryConfig());
@@ -83,6 +93,10 @@ export function createConfig({
     projectId,
     chains: chains as unknown as readonly [Chain, ...Chain[]],
     wallets: walletGroups,
+    transports: {
+      [chain.id]: http(),
+      [mainnet.id]: fallback(MAINNET_RPCS.map((url) => http(url))),
+    },
     ssr: true,
     storage,
   });
