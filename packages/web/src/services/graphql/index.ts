@@ -233,6 +233,7 @@ export const delegateService = {
       orderBy?: string;
       where?: {
         power_gt?: number;
+        fromDelegate_eq?: string;
         toDelegate_eq?: string;
       };
     } = {}

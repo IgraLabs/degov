@@ -1,7 +1,7 @@
+import { useQuery } from "@tanstack/react-query";
 import { ChevronDown, Power } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useMemo } from "react";
-import { formatUnits } from "viem";
 import { useReadContract } from "wagmi";
 
 import { ExternalLinkIcon, ProfileIcon } from "@/components/icons";
@@ -16,7 +16,9 @@ import { useDisconnectWallet } from "@/hooks/useDisconnectWallet";
 import { useFormatGovernanceTokenAmount } from "@/hooks/useFormatGovernanceTokenAmount";
 import { useGovernanceToken } from "@/hooks/useGovernanceToken";
 import { useCurrentVotingPower } from "@/hooks/useSmartGetVotes";
+import { proposalService } from "@/services/graphql";
 import { formatShortAddress } from "@/utils";
+import { votingPowerShare } from "@/utils/delegation";
 import { resolveErc20TokenAddress } from "@/utils/governance-token";
 
 import { AddressAvatar } from "../address-avatar";
@@ -42,18 +44,13 @@ export const Connected = ({ address, onMenuToggle }: ConnectedProps) => {
 
   const erc20TokenAddress = resolveErc20TokenAddress(daoConfig?.contracts);
 
-  const { data: totalSupply, isLoading: isTotalSupplyLoading } =
-    useReadContract({
-      address: erc20TokenAddress,
-      abi: tokenAbi,
-      functionName: "totalSupply",
-      chainId: daoConfig?.chain?.id,
-      query: {
-        enabled:
-          Boolean(erc20TokenAddress) &&
-          Boolean(daoConfig?.chain?.id),
-      },
-    });
+  // Same denominator as the profile page: total voting power from the indexer.
+  const { data: dataMetrics, isLoading: isMetricsLoading } = useQuery({
+    queryKey: ["dataMetrics", daoConfig?.indexer?.endpoint],
+    queryFn: () =>
+      proposalService.getProposalMetrics(daoConfig?.indexer?.endpoint ?? ""),
+    enabled: !!daoConfig?.indexer?.endpoint,
+  });
 
   const { data: tokenBalance, isLoading: isBalanceLoading } = useReadContract({
     address: erc20TokenAddress,
@@ -69,36 +66,18 @@ export const Connected = ({ address, onMenuToggle }: ConnectedProps) => {
     },
   });
 
-  const decimals =
-    governanceToken?.decimals ??
-    (daoConfig?.contracts?.governorToken?.standard === "ERC721" ? 0 : 18);
-
   const formattedVotingPower = useMemo(() => {
     if (!votingPower) return "0";
 
     return formatTokenAmount(votingPower)?.formatted ?? "0";
   }, [votingPower, formatTokenAmount]);
 
-  const votingPowerPercentage = useMemo(() => {
-    if (!votingPower || !totalSupply || totalSupply === 0n) return 0;
-    if (decimals === undefined) return null;
-
-    const votingPowerValue = Number(formatUnits(votingPower, decimals));
-    const totalSupplyValue = Number(formatUnits(totalSupply, decimals));
-
-    if (
-      !Number.isFinite(votingPowerValue) ||
-      !Number.isFinite(totalSupplyValue) ||
-      totalSupplyValue === 0
-    ) {
-      return 0;
-    }
-
-    return (votingPowerValue / totalSupplyValue) * 100;
-  }, [votingPower, totalSupply, decimals]);
+  const votingPowerPercentage = useMemo(
+    () => votingPowerShare(votingPower, dataMetrics?.powerSum),
+    [votingPower, dataMetrics?.powerSum]
+  );
 
   const formattedVotingPowerPercentage = useMemo(() => {
-    if (votingPowerPercentage === null) return "0";
     return new Intl.NumberFormat(undefined, {
       maximumFractionDigits: 2,
     }).format(votingPowerPercentage);
@@ -111,7 +90,7 @@ export const Connected = ({ address, onMenuToggle }: ConnectedProps) => {
   }, [tokenBalance, formatTokenAmount]);
 
   const isVotingPowerSectionLoading =
-    isVotingPowerLoading || isGovernanceTokenLoading || isTotalSupplyLoading;
+    isVotingPowerLoading || isGovernanceTokenLoading || isMetricsLoading;
 
   const isBalanceSectionLoading = isBalanceLoading || isGovernanceTokenLoading;
 

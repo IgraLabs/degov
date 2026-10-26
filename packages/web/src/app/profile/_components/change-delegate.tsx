@@ -1,5 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useState } from "react";
+import { toast } from "react-toastify";
 import { useAccount } from "wagmi";
 
 import { AddressResolver } from "@/components/address-resolver";
@@ -36,10 +37,17 @@ export function ChangeDelegate({
   const [hash, setHash] = useState<string | null>(null);
   const handleDelegate = useCallback(async () => {
     if (!address) return;
-    const hash = await delegate(address);
-    if (hash) {
-      onOpenChange?.(false);
-      setHash(hash);
+    try {
+      const hash = await delegate(address);
+      if (hash) {
+        onOpenChange?.(false);
+        setHash(hash);
+      }
+    } catch (error) {
+      toast.error(
+        (error as { shortMessage: string })?.shortMessage ??
+          "Failed to delegate votes"
+      );
     }
   }, [delegate, onOpenChange, address]);
   return (
